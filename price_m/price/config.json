@@ -1,0 +1,47 @@
+{
+  "domains": {
+    "amazon.com": {
+      "title_selector": "#productTitle",
+      "price_selectors": [
+        ".a-price-whole",
+        "#priceblock_ourprice",
+        ".a-color-price"
+      ]
+    },
+    "amazon.in": {
+      "title_selector": "#productTitle",
+      "price_selectors": [
+        ".a-price-whole",
+        ".a-price-val",
+        "#priceblock_ourprice",
+        ".a-color-price"
+      ]
+    },
+    "bestbuy.com": {
+      "title_selector": ".sku-title h1",
+      "price_selectors": [
+        ".priceView-hero-price.priceView-customer-price span"
+      ]
+    },
+    "walmart.com": {
+      "title_selector": "h1#main-title, h1[itemprop='name']",
+      "price_selectors": [
+        "span[itemprop='price']",
+        "[data-automation-id='product-price']",
+        ".price .visuallyhidden"
+      ]
+    },
+    "flipkart.com": {
+      "title_selector": "div._1psv1zek9, .VU-Z7G, span.B_NuCI, h1.yhB1nd",
+      "price_selectors": [
+        "div._1psv1ze2c, .Nx9XpS, div.Nx9bqj, div._30jeq3"
+      ]
+    }
+  },
+  "user_agents": [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Gecko/20100101 Firefox/120.0"
+  ]
+}

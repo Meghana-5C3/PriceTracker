@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-5 col-sm-10">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4 p-md-5">
+                <div class="text-center mb-4">
+                    <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                        style="width:64px;height:64px;">
+                        <i class="fa-solid fa-chart-line fa-xl text-primary"></i>
+                    </div>
+                    <h3 class="fw-bold mb-1">Create Account</h3>
+                    <p class="text-muted small">Join PriceTracker Pro — track deals, save money</p>
+                </div>
+
+                <form method="POST" action="{{ url_for('auth.signup') }}">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Full Name</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fa-solid fa-user text-muted"></i></span>
+                            <input type="text" class="form-control" name="name" placeholder="John Doe" autofocus>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Email address</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fa-solid fa-envelope text-muted"></i></span>
+                            <input type="email" class="form-control" name="email" required
+                                placeholder="you@example.com">
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold small">Password</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fa-solid fa-lock text-muted"></i></span>
+                            <input type="password" class="form-control" name="password" required
+                                placeholder="Min. 6 characters" minlength="6">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 fw-bold py-2 mb-3">
+                        <i class="fa-solid fa-rocket me-2"></i>Create Account & Start Tracking
+                    </button>
+                    <p class="text-center text-muted small mb-0">
+                        Already have an account? <a href="{{ url_for('auth.login') }}"
+                            class="fw-bold text-decoration-none">Sign in</a>
+                    </p>
+                </form>
+            </div>
+        </div>
+
+        <div class="text-center mt-4">
+            <p class="text-muted small">
+                <i class="fa-solid fa-shield-halved me-1 text-success"></i>No spam. No credit card. 100% free.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+
+{% block title %}Referrals & Rewards | BuyHatke{% endblock %}
+
+{% block content %}
+<main class="main-content">
+    <div class="container">
+        <div class="tab-hero hero-rewards">
+            <h1>Invite Friends & Earn Points</h1>
+            <p>Earn 500 points for every friend who joins BuyHatke!</p>
+            <div class="referral-box">
+                <input type="text" title="Your unique referral link"
+                    value="https://buyhatke.com/r/{{ user.referral_code if user else 'LOGIN_TO_SEE' }}" readonly
+                    id="refLink">
+                <button onclick="copyRef()">Copy Link</button>
+            </div>
+
+            <div class="points-summary mt-3">
+                <div class="points-card">
+                    <span class="p-label">Redeemable Points</span>
+                    <span class="p-value">₹{{ rewards_data.simulated_points if rewards_data else (user.redeemable_points
+                        if user else 0) }}</span>
+                </div>
+                <div class="points-card pending">
+                    <span class="p-label">Pending</span>
+                    <span class="p-value">₹{{ rewards_data.simulated_pending if rewards_data else (user.pending_points
+                        if user else 0) }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="rewards-sections">
+            <div class="section-card">
+                <h3>Discounted Gift Cards</h3>
+                <div class="gift-grid">
+                    <div class="gift-card">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg" alt="Amazon">
+                        <span class="cashback-badge">Get 2% Cashback</span>
+                        <button class="track-mini-btn" onclick="redeemGift('Amazon', 500)">Redeem ₹500</button>
+                    </div>
+                    <div class="gift-card">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Zomato_logo.png" alt="Zomato">
+                        <span class="cashback-badge">Get 5% Cashback</span>
+                        <button class="track-mini-btn" onclick="redeemGift('Zomato', 250)">Redeem ₹250</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-card sidebar-card">
+                <h3>Rewards FAQ</h3>
+                <details>
+                    <summary>How do I redeem my points?</summary>
+                    <p>Points can be converted into Amazon or Flipkart gift cards once you reach 1000 points.</p>
+                </details>
+                <details>
+                    <summary>When do pending points become redeemable?</summary>
+                    <p>Pending points usually clear within 45 days after a successful referral or purchase.</p>
+                </details>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function copyRef() {
+        const copyText = document.getElementById("refLink");
+        copyText.select();
+        document.execCommand("copy");
+
+        // Visual feedback
+        const btn = document.querySelector(".referral-box button");
+        const originalText = btn.innerText;
+        btn.innerText = "Copied!";
+        btn.style.background = "#10b981";
+        btn.style.color = "white";
+        setTimeout(() => {
+            btn.innerText = originalText;
+            btn.style.background = "";
+            btn.style.color = "";
+        }, 2000);
+    }
+
+    async function redeemGift(brand, value) {
+        if (!confirm(`Confirm redemption of ₹${value} points for ${brand} Gift Card?`)) return;
+
+        const response = await fetch('/api/mock-buy-reward', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ brand, value })
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+            alert(`Success! Your ${brand} Gift Card will be sent to your email shortly.`);
+            location.reload();
+        } else {
+            alert(data.error || "Redemption failed. Check your points balance.");
+        }
+    }
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .mt-3 {
+        margin-top: 3rem;
+    }
+
+    .referral-box {
+        max-width: 500px;
+        margin: 2rem auto;
+        background: rgba(255, 255, 255, 0.1);
+        -webkit-backdrop-filter: blur(10px);
+        backdrop-filter: blur(10px);
+        padding: 6px;
+        border-radius: 12px;
+        display: flex;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .referral-box input {
+        flex: 1;
+        background: none;
+        border: none;
+        color: white;
+        font-weight: 700;
+        padding: 0.5rem 1rem;
+        outline: none;
+    }
+
+    .referral-box button {
+        background: white;
+        color: var(--bh-indigo);
+        border: none;
+        padding: 0.5rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 800;
+        cursor: pointer;
+        transition: 0.3s;
+    }
+
+    .points-summary {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+    }
+
+    .points-card {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 1.5rem 3rem;
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .p-label {
+        display: block;
+        font-size: 0.8rem;
+        opacity: 0.8;
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        font-weight: 700;
+    }
+
+    .p-value {
+        font-size: 2rem;
+        font-weight: 900;
+    }
+
+    .rewards-sections {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 3rem;
+        margin-top: 4rem;
+    }
+
+    .section-card {
+        background: white;
+        padding: 2.5rem;
+        border-radius: var(--radius-lg);
+        border: 1px solid #f1f5f9;
+    }
+
+    .gift-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+
+    .gift-card {
+        border: 1px solid #f1f5f9;
+        padding: 2rem;
+        border-radius: 20px;
+        text-align: center;
+        transition: 0.3s;
+    }
+
+    .gift-card:hover {
+        transform: translateY(-5px);
+        border-color: var(--bh-indigo);
+    }
+
+    .gift-card img {
+        height: 50px;
+        margin-bottom: 1.5rem;
+        object-fit: contain;
+    }
+
+    .cashback-badge {
+        display: block;
+        color: var(--bh-green);
+        font-weight: 800;
+        font-size: 0.9rem;
+        margin-bottom: 1.5rem;
+    }
+
+    details {
+        margin-bottom: 1rem;
+        padding: 1.25rem;
+        background: var(--bh-indigo-light);
+        border-radius: 12px;
+    }
+
+    summary {
+        font-weight: 800;
+        cursor: pointer;
+        color: var(--bh-indigo-dark);
+    }
+</style>
+{% endblock %}

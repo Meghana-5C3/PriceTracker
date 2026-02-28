@@ -1,0 +1,278 @@
+{% extends "base.html" %}
+
+{% block title %}Price Compare | BuyHatke{% endblock %}
+
+{% block content %}
+<main class="main-content">
+    <div class="container container-narrow">
+        <div class="text-center mb-3">
+            <h1>⚖️ Cross-Store Price Comparison</h1>
+            <p>Find the absolute lowest price across major retailers in seconds.</p>
+        </div>
+
+        <div class="comparison-search">
+            <input type="text" placeholder="Search product to compare prices...">
+            <button>Compare</button>
+        </div>
+
+        <div class="featured-comparison">
+            <div class="product-header">
+                <img src="https://assets.adidas.com/images/h_840,f_auto,q_auto,fl_lossy,c_fill,g_auto/7cd6bc559ed141c28c6eaf4b00a6e60b_9366/Pureboost_23_Shoes_White_IF2375_01_standard.jpg"
+                    alt="Product">
+                <div class="header-details">
+                    <h2>Adidas Pureboost 23 Shoes</h2>
+                    <div class="best-verdict">Best Price: ₹6,499 at Adidas India</div>
+                </div>
+            </div>
+
+            <div class="store-list">
+                <div class="store-item winner">
+                    <img src="https://www.adidas.co.in/static/on/demandware.static/-/Sites-adidas-IN-Library/default/dw66185885/adidas-logo.png"
+                        alt="Adidas" class="h-20">
+                    <div class="s-info">
+                        <strong>Adidas India</strong>
+                        <span>Delivery: Free</span>
+                    </div>
+                    <div class="s-price">
+                        <span class="p-val">₹6,499</span>
+                        <span class="p-badge">Lowest</span>
+                    </div>
+                    <button class="go-btn" onclick="alert('Redirecting to Adidas India...')">Go to Store</button>
+                </div>
+                <div class="store-item">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg" alt="Amazon"
+                        class="h-15">
+                    <div class="s-info">
+                        <strong>Amazon India</strong>
+                        <span>Delivery: ₹40</span>
+                    </div>
+                    <div class="s-price">
+                        <span class="p-val">₹12,999</span>
+                    </div>
+                    <button class="go-btn" onclick="alert('Redirecting to Amazon India...')">Go to Store</button>
+                </div>
+                <div class="store-item">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/2/24/Flipkart_logo.png" alt="Flipkart"
+                        class="h-20">
+                    <div class="s-info">
+                        <strong>Flipkart</strong>
+                        <span>Delivery: Free</span>
+                    </div>
+                    <div class="s-price">
+                        <span class="p-val">₹11,499</span>
+                    </div>
+                    <button class="go-btn" onclick="alert('Redirecting to Flipkart...')">Go to Store</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    async function mockCompare() {
+        const input = document.querySelector('.comparison-search input');
+        const query = input.value;
+        if (!query) return;
+
+        const btn = document.querySelector('.comparison-search button');
+        const origBtnText = btn.innerText;
+        btn.innerText = "Comparing...";
+
+        try {
+            const resp = await fetch(`/api/compare?query=${encodeURIComponent(query)}`);
+            const data = await resp.json();
+
+            const productTitle = document.querySelector('.header-details h2');
+            const verdict = document.querySelector('.best-verdict');
+            const storeList = document.querySelector('.store-list');
+
+            productTitle.innerText = data.query;
+
+            let bestStore = data.results.find(s => s.is_lowest);
+            if (bestStore) {
+                verdict.innerText = `Best Price: ₹${bestStore.price.toLocaleString()} at ${bestStore.name}`;
+            }
+
+            // Rebuild the stores list
+            storeList.innerHTML = '';
+            data.results.forEach(store => {
+                const div = document.createElement('div');
+                div.className = `store-item ${store.is_lowest ? 'winner' : ''}`;
+                div.innerHTML = `
+                    <img src="${store.logo}" alt="${store.name}" class="h-20" style="object-fit:contain;">
+                    <div class="s-info">
+                        <strong>${store.name}</strong>
+                        <span>Delivery: ${store.delivery}</span>
+                    </div>
+                    <div class="s-price">
+                        <span class="p-val">₹${store.price.toLocaleString()}</span>
+                        ${store.is_lowest ? '<span class="p-badge">Lowest</span>' : ''}
+                    </div>
+                    <button class="go-btn" onclick="alert('Redirecting to ${store.name}...')">Go to Store</button>
+                `;
+                storeList.appendChild(div);
+            });
+            input.value = '';
+        } catch (e) {
+            console.error(e);
+            alert("Failed to compare prices.");
+        } finally {
+            btn.innerText = origBtnText;
+        }
+    }
+
+    document.querySelector('.comparison-search button').onclick = mockCompare;
+
+    // Add event listener for Enter key
+    document.querySelector('.comparison-search input').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') mockCompare();
+    });
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .h-20 {
+        height: 20px;
+    }
+
+    .h-15 {
+        height: 15px;
+    }
+
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .comparison-search {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 3rem;
+        background: white;
+        padding: 0.5rem;
+        border-radius: 50px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    }
+
+    .comparison-search input {
+        flex: 1;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 50px;
+        outline: none;
+        font-size: 1rem;
+    }
+
+    .comparison-search button {
+        background: #4f46e5;
+        color: white;
+        border: none;
+        padding: 0.75rem 2rem;
+        border-radius: 50px;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .featured-comparison {
+        background: white;
+        border-radius: 24px;
+        border: 1px solid #e2e8f0;
+        padding: 2.5rem;
+    }
+
+    .product-header {
+        display: flex;
+        gap: 2rem;
+        align-items: center;
+        margin-bottom: 2.5rem;
+        border-bottom: 1px solid #f1f5f9;
+        padding-bottom: 2rem;
+    }
+
+    .product-header img {
+        height: 120px;
+        border-radius: 12px;
+    }
+
+    .header-details h2 {
+        font-size: 1.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .best-verdict {
+        color: #10b981;
+        font-weight: 700;
+    }
+
+    .store-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .store-item {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        padding: 1.25rem;
+        border-radius: 16px;
+        background: #f8fafc;
+        border: 1px solid transparent;
+        transition: all 0.2s;
+    }
+
+    .store-item.winner {
+        background: white;
+        border-color: #10b981;
+        box-shadow: 0 4px 10px rgba(16, 185, 129, 0.1);
+    }
+
+    .s-info {
+        flex: 1;
+    }
+
+    .s-info strong {
+        display: block;
+    }
+
+    .s-info span {
+        font-size: 0.8rem;
+        color: #64748b;
+    }
+
+    .s-price {
+        text-align: right;
+        margin-right: 1.5rem;
+    }
+
+    .p-val {
+        display: block;
+        font-size: 1.25rem;
+        font-weight: 800;
+    }
+
+    .p-badge {
+        font-size: 0.7rem;
+        background: #10b981;
+        color: white;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-weight: 800;
+    }
+
+    .go-btn {
+        background: #4f46e5;
+        color: white;
+        border: none;
+        padding: 0.6rem 1.25rem;
+        border-radius: 10px;
+        font-weight: 700;
+        cursor: pointer;
+    }
+</style>
+{% endblock %}

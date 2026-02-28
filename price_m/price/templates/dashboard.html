@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+
+{% block title %}Home | BuyHatke Clone{% endblock %}
+
+{% block content %}
+<div class="hero-banner">
+    <div class="hero-chip">✨ India's #1 Price Comparison & Tracker</div>
+    <h1>Shop Smart, Save Big <br> on Everything You Love</h1>
+    <p>Compare prices across 500+ stores, track drops, and earn rewards effortlessly.</p>
+
+    <div class="search-container">
+        <input type="text" id="new-product-url" placeholder="Paste Amazon/Flipkart link or search any product...">
+        <button class="btn-search" onclick="addProduct()">Track Price</button>
+    </div>
+
+    <div class="hero-features">
+        <div class="h-feat"><span class="h-icon">📉</span> Price History</div>
+        <div class="h-feat"><span class="h-icon">🔔</span> Instant Alerts</div>
+        <div class="h-feat"><span class="h-icon">🛍️</span> Reward Points</div>
+    </div>
+</div>
+
+<div class="magic-promo">
+    <div class="promo-content">
+        <span class="p-tag">Pro Tip</span>
+        <p>Type <strong>buyhatke.com/</strong> before any product URL to see its history instantly!</p>
+    </div>
+</div>
+
+<main class="dashboard-container">
+    <aside class="sidebar">
+        <div class="filter-group">
+            <h3 class="filter-header">Stores</h3>
+            <div class="filter-list">
+                <a href="/?tab={{ active_tab }}&platform=amazon"
+                    class="filter-link {{ 'active' if active_platform == 'amazon' }}">Amazon</a>
+                <a href="/?tab={{ active_tab }}&platform=flipkart"
+                    class="filter-link {{ 'active' if active_platform == 'flipkart' }}">Flipkart</a>
+                <a href="/?tab={{ active_tab }}&platform=adidas"
+                    class="filter-link {{ 'active' if active_platform == 'adidas' }}">Adidas</a>
+            </div>
+        </div>
+
+        <div class="filter-group">
+            <h3 class="filter-header">Categories</h3>
+            <div class="filter-list">
+                <a href="/?tab={{ active_tab }}&category=electronics"
+                    class="filter-link {{ 'active' if active_category == 'electronics' }}">Electronics</a>
+                <a href="/?tab={{ active_tab }}&category=fashion"
+                    class="filter-link {{ 'active' if active_category == 'fashion' }}">Fashion</a>
+                <a href="/?tab={{ active_tab }}&category=grocery"
+                    class="filter-link {{ 'active' if active_category == 'grocery' }}">Grocery</a>
+            </div>
+        </div>
+    </aside>
+
+    <section class="main-feed">
+        <div class="feed-header">
+            <h2>Trending Hot Deals 🔥</h2>
+            <div class="feed-sort">
+                <span>Sort by:</span>
+                <select title="Sort deals by">
+                    <option>Popularity</option>
+                    <option>Highest Discount</option>
+                    <option>Price: Low to High</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="product-grid" id="product-grid">
+            {% if products %}
+            {% for product in products %}
+            <div class="card-v3" data-name="{{ product.name|lower }}" data-price="{{ product.current_price }}"
+                data-discount="{{ product.discount_pct }}" data-score="{{ product.deal_score }}">
+                <div class="c-img">
+                    <img src="{{ product.image_url }}" alt="{{ product.name }}">
+                    {% if product.lowest_ever %}<div class="c-badge lowest">Lowest Ever</div>{% endif %}
+                    {% if product.discount_pct > 30 %}<div class="c-badge deal">{{ product.discount_pct }}% OFF</div>{%
+                    endif %}
+                </div>
+                <div class="c-body">
+                    <div class="c-meta">
+                        <span class="c-store">{{ product.domain }}</span>
+                        <div class="c-rating">★ 4.2</div>
+                    </div>
+                    <h4 class="c-title">{{ product.name }}</h4>
+                    <div class="c-price-row">
+                        <div class="c-curr">₹{{ product.current_price|int }}</div>
+                        <div class="c-prev">
+                            <span style="text-decoration: line-through;">₹{{ product.previous_price|int if
+                                product.previous_price else '-' }}</span>
+                            {% if product.current_price is not none and product.previous_price is not none %}
+                            {% if product.current_price < product.previous_price %} <span
+                                style="color: #10b981; margin-left: 4px; font-weight: bold; font-size: 0.8rem;">(↓
+                                Drop)</span>
+                                {% elif product.current_price > product.previous_price %}
+                                <span style="color: #ef4444; margin-left: 4px; font-weight: bold; font-size: 0.8rem;">(↑
+                                    Rise)</span>
+                                {% endif %}
+                                {% endif %}
+                        </div>
+                    </div>
+                    <div class="c-footer">
+                        <div class="c-score">Score: <strong>{{ product.deal_score }}</strong></div>
+                        <button class="track-mini-btn" onclick="trackProduct('{{ product.url }}', this)">Track</button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">🔍</div>
+                <h3>No products found</h3>
+                <p>Try changing your filters or searching for something else.</p>
+            </div>
+            {% endif %}
+        </div>
+    </section>
+</main>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Search & Sort Logic
+    const searchInput = document.getElementById('new-product-url');
+    const sortSelect = document.querySelector('.feed-sort select');
+    const grid = document.getElementById('product-grid');
+
+    searchInput.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase();
+        if (query.startsWith('http')) return; // Don't filter if it looks like a URL for tracking
+
+        const cards = grid.querySelectorAll('.card-v3');
+        cards.forEach(card => {
+            const name = card.getAttribute('data-name');
+            card.style.display = name.includes(query) ? 'flex' : 'none';
+        });
+    });
+
+    sortSelect.addEventListener('change', (e) => {
+        const cards = Array.from(grid.querySelectorAll('.card-v3'));
+        const type = e.target.value;
+
+        cards.sort((a, b) => {
+            if (type === 'Highest Discount') {
+                return b.getAttribute('data-discount') - a.getAttribute('data-discount');
+            } else if (type === 'Price: Low to High') {
+                return a.getAttribute('data-price') - b.getAttribute('data-price');
+            } else {
+                return b.getAttribute('data-score') - a.getAttribute('data-score');
+            }
+        });
+
+        cards.forEach(card => grid.appendChild(card));
+    });
+
+    async function addProduct() {
+        const urlInput = document.getElementById('new-product-url');
+        const url = urlInput.value;
+        if (!url) return;
+
+        if (!url.startsWith('http')) {
+            alert('Please paste a valid Amazon/Flipkart product URL to track.');
+            return;
+        }
+
+        const btn = document.querySelector('.btn-search');
+        btn.innerText = 'Analyzing...';
+        const response = await fetch('/api/add-product', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: url })
+        });
+        if (response.ok) location.href = '/?tab=price-tracker';
+        else {
+            const error = await response.json();
+            alert(error.error || 'Website not supported yet. Try Amazon or Flipkart!');
+            btn.innerText = 'Track Price';
+        }
+    }
+
+    async function trackProduct(url, btn) {
+        const originalText = btn.innerText;
+        btn.innerText = '...';
+        const response = await fetch('/api/add-product', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: url })
+        });
+        if (response.ok) {
+            btn.innerText = '✅';
+            btn.style.background = 'var(--bh-green)';
+            setTimeout(() => { btn.innerText = originalText; btn.style.background = ''; }, 2000);
+        } else {
+            const error = await response.json();
+            alert(error.error || 'Failed to track');
+            btn.innerText = originalText;
+        }
+    }
+</script>
+{% endblock %}

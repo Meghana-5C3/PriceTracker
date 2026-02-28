@@ -1,0 +1,623 @@
+{% extends "base.html" %}
+
+{% block title %}Price Tracker | BuyHatke{% endblock %}
+
+{% block content %}
+<main class="main-content">
+    <div class="container">
+        <div class="tracker-header">
+            <div>
+                <h1>My Tracked Products</h1>
+                <p>You have {{ products|length }} active trackers.</p>
+            </div>
+            <button class="add-track-btn" onclick="openAddModal()">+ Add New Product</button>
+        </div>
+
+        <div class="tracker-stats">
+            <div class="stat-box">
+                <span class="s-val">{{ products|length }}</span>
+                <span class="s-lab">Total Products</span>
+            </div>
+            <div class="stat-box">
+                <span class="s-val">2</span>
+                <span class="s-lab">Active Alerts</span>
+            </div>
+            <div class="stat-box">
+                <span class="s-val">₹2,840</span>
+                <span class="s-lab">Total Savings</span>
+            </div>
+        </div>
+
+        <div class="tracker-grid">
+            {% if products %}
+            {% for product in products %}
+            <div class="tracker-card {{ 'card-paused' if product.is_paused }}" id="card-{{ product.id }}"
+                data-history="{{ product.history | tojson | forceescape }}">
+                <div class="t-img">
+                    <img src="{{ product.image_url }}" alt="{{ product.name }}">
+                </div>
+                <div class="t-info">
+                    <div class="t-top">
+                        <span class="t-domain">{{ product.domain }}</span>
+                        {% if product.lowest_ever %}<span class="t-badge">Lowest Ever</span>{% endif %}
+                        {% if product.is_paused %}<span class="t-badge paused">PAUSED</span>{% endif %}
+                    </div>
+                    <h3 class="t-title">{{ product.name }}</h3>
+                    <div class="t-prices">
+                        <div class="t-curr">₹{{ product.current_price|int if product.current_price else '-' }}</div>
+                        <div class="t-prev">₹{{ product.previous_price|int if product.previous_price else '-' }}</div>
+                        {% if product.current_price is not none and product.previous_price is not none %}
+                        {% if product.current_price < product.previous_price %} <div class="t-drop">↓ {{
+                            ((product.previous_price - product.current_price)/product.previous_price*100)|round|int if
+                            product.previous_price > 0 else 0 }}% Drop vs last
+                    </div>
+                    {% elif product.current_price > product.previous_price %}
+                    <div class="t-drop" style="background:#fef2f2; color:#ef4444;">↑ {{ ((product.current_price -
+                        product.previous_price)/product.previous_price*100)|round|int if product.previous_price > 0 else
+                        0 }}% Rise</div>
+                    {% else %}
+                    <div class="t-drop">{{ product.discount_pct }}% OFF</div>
+                    {% endif %}
+                    {% else %}
+                    <div class="t-drop">{{ product.discount_pct }}% OFF</div>
+                    {% endif %}
+                </div>
+                <div class="t-target">
+                    <span id="target-text-{{ product.id }}">Target: ₹{{ product.target_price|int if
+                        product.target_price else 'Not Set' }}</span>
+                    <button class="edit-btn" onclick="editTarget('{{ product.id }}')">Edit</button>
+                </div>
+                <div class="t-meta-small">
+                    <span>Last Checked: {{ product.last_checked }}</span>
+                </div>
+            </div>
+            <div class="t-actions">
+                <button class="view-history-btn" onclick="toggleHistory('{{ product.id }}')">📈 View
+                    History</button>
+                <button class="pause-btn" onclick="togglePause('{{ product.id }}', this)">
+                    {{ '▶️ Resume' if product.is_paused else '⏸️ Pause' }}
+                </button>
+                <button class="test-email-btn" onclick="testEmail('{{ product.id }}')"
+                    title="Simulate a price drop and send email">💌 Test Alert</button>
+                <button class="delete-btn" onclick="deleteProduct('{{ product.id }}')">🗑️</button>
+            </div>
+            <div id="history-{{ product.id }}" class="t-history hidden">
+                <canvas id="chart-{{ product.id }}"></canvas>
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="empty-state text-center mt-3">
+            <h3>No products tracked yet</h3>
+            <p>Add your first product to start tracking prices!</p>
+        </div>
+        {% endif %}
+    </div>
+    </div>
+</main>
+
+<div id="addModal" class="modal hidden">
+    <div class="modal-content" style="width: 550px;">
+        <h3>Add New Product</h3>
+
+        <div class="form-group">
+            <label>Product URL *</label>
+            <input type="text" id="modal-url" placeholder="Paste Amazon/Flipkart URL">
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label>Target Price (Optional)</label>
+                <input type="number" id="modal-target" placeholder="e.g. 5000">
+            </div>
+            <div class="form-group">
+                <label>Check Frequency</label>
+                <select id="modal-freq" class="custom-select">
+                    <option value="daily">Daily</option>
+                    <option value="12h">Every 12 Hours</option>
+                    <option value="6h">Every 6 Hours</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="modal-actions mt-3">
+            <button onclick="closeAddModal()" class="btn-cancel">Cancel</button>
+            <button onclick="submitAdd()" class="btn-submit">Track Product</button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function openAddModal() { document.getElementById('addModal').classList.remove('hidden'); }
+    function closeAddModal() { document.getElementById('addModal').classList.add('hidden'); }
+
+    async function submitAdd() {
+        const url = document.getElementById('modal-url').value;
+        const target = document.getElementById('modal-target').value;
+        const freq = document.getElementById('modal-freq').value;
+
+        if (!url) return;
+        const btn = document.querySelector('.btn-submit');
+        const oldText = btn.innerText;
+        btn.innerText = "Processing...";
+
+        const resp = await fetch('/api/add-product', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: url, target_price: target, frequency: freq })
+        });
+        if (resp.ok) location.reload();
+        else {
+            alert('Failed to add product');
+            btn.innerText = oldText;
+        }
+    }
+
+    async function editTarget(id) {
+        const newTarget = prompt("Enter new target price (INR):");
+        if (newTarget === null) return;
+
+        const resp = await fetch('/api/update-target', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: id, target_price: newTarget })
+        });
+        if (resp.ok) {
+            document.getElementById(`target-text-${id}`).innerText = `Target: ₹${newTarget}`;
+        }
+    }
+
+    async function deleteProduct(id) {
+        if (!confirm("Stop tracking this product?")) return;
+        const resp = await fetch(`/api/delete-product/${id}`, { method: 'POST' });
+        if (resp.ok) {
+            document.getElementById(`card-${id}`).remove();
+        }
+    }
+
+    async function testEmail(id) {
+        const resp = await fetch(`/api/test-email/${id}`, { method: 'POST' });
+        const data = await resp.json();
+        if (resp.ok) {
+            alert("Email triggered successfully! " + (data.message || ""));
+        } else {
+            alert(data.error || "Failed to send test email.");
+        }
+    }
+
+    async function togglePause(id, btn) {
+        const resp = await fetch('/api/toggle-pause', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: id })
+        });
+        if (resp.ok) {
+            const data = await resp.json();
+            const card = document.getElementById(`card-${id}`);
+            if (data.is_paused) {
+                card.classList.add('card-paused');
+                btn.innerText = '▶️ Resume';
+                // Add badge if not there
+                if (!card.querySelector('.t-badge.paused')) {
+                    const badge = document.createElement('span');
+                    badge.className = 't-badge paused';
+                    badge.innerText = 'PAUSED';
+                    card.querySelector('.t-top').appendChild(badge);
+                }
+            } else {
+                card.classList.remove('card-paused');
+                btn.innerText = '⏸️ Pause';
+                const badge = card.querySelector('.t-badge.paused');
+                if (badge) badge.remove();
+            }
+        }
+    }
+
+    function toggleHistory(id) {
+        const h = document.getElementById(`history-${id}`);
+        h.classList.toggle('hidden');
+        if (!h.classList.contains('hidden')) initChart(id);
+    }
+
+    function initChart(id) {
+        // Parse the dynamic history injected in the HTML data attribute
+        const card = document.getElementById(`card-${id}`);
+        const historyRaw = card.getAttribute('data-history');
+        let hData = [];
+        try {
+            hData = JSON.parse(historyRaw);
+        } catch (e) { }
+
+        const labels = hData.map(h => h.date);
+        const prices = hData.map(h => h.price);
+
+        if (prices.length === 0) return; // No data yet
+
+        const minP = Math.min(...prices);
+        const maxP = Math.max(...prices);
+
+        const ctx = document.getElementById(`chart-${id}`).getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Price History (₹)',
+                    data: prices,
+                    borderColor: '#4f46e5',
+                    tension: 0.2,
+                    fill: true,
+                    backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                    pointBackgroundColor: '#10b981',
+                    pointRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        suggestedMin: minP * 0.9,
+                        suggestedMax: maxP * 1.1
+                    }
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: `Stats: Lowest ₹${minP} | Highest ₹${maxP}`
+                    }
+                }
+            }
+        });
+    }
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2000;
+    }
+
+    .modal-content {
+        background: white;
+        padding: 2.5rem;
+        border-radius: 20px;
+        width: 500px;
+    }
+
+    .modal-content h3 {
+        margin-bottom: 1.5rem;
+    }
+
+    .modal-content input,
+    .custom-select {
+        width: 100%;
+        padding: 1rem;
+        border-radius: 10px;
+        border: 1px solid #e2e8f0;
+        margin-bottom: 0.5rem;
+        font-family: inherit;
+        font-size: 1rem;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+        display: block;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+        color: #475569;
+    }
+
+    .form-row {
+        display: flex;
+        gap: 1.5rem;
+    }
+
+    .form-row .form-group {
+        flex: 1;
+    }
+
+    .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 1rem;
+    }
+
+    .btn-cancel {
+        background: #f1f5f9;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        cursor: pointer;
+    }
+
+    .btn-submit {
+        background: var(--bh-indigo);
+        color: white;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        cursor: pointer;
+    }
+
+    .hidden {
+        display: none !important;
+    }
+
+    .mt-3 {
+        margin-top: 3rem;
+    }
+
+    /* Tracker Specific Styles */
+    .tracker-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding: 1rem 0;
+    }
+
+    .tracker-header h1 {
+        font-size: 2.5rem;
+        font-weight: 900;
+        color: var(--bh-navy);
+        margin-bottom: 0.5rem;
+    }
+
+    .tracker-header p {
+        color: #64748b;
+        font-size: 1.1rem;
+    }
+
+    .add-track-btn {
+        background: var(--bh-indigo);
+        color: white;
+        padding: 1rem 2rem;
+        border-radius: 12px;
+        font-weight: 800;
+        border: none;
+        cursor: pointer;
+        box-shadow: 0 10px 20px rgba(79, 70, 229, 0.2);
+        transition: transform 0.2s;
+    }
+
+    .add-track-btn:hover {
+        transform: translateY(-2px);
+    }
+
+    .tracker-stats {
+        display: flex;
+        gap: 1.5rem;
+        margin-bottom: 3rem;
+    }
+
+    .stat-box {
+        background: white;
+        flex: 1;
+        padding: 1.5rem;
+        border-radius: 16px;
+        border: 1px solid #e2e8f0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .stat-box .s-val {
+        font-size: 2rem;
+        font-weight: 900;
+        color: var(--bh-indigo);
+    }
+
+    .stat-box .s-lab {
+        font-size: 0.9rem;
+        color: #64748b;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-top: 0.25rem;
+    }
+
+    .tracker-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 2rem;
+    }
+
+    .tracker-card {
+        background: white;
+        border-radius: 20px;
+        border: 1px solid #e2e8f0;
+        overflow: hidden;
+        transition: transform 0.3s, box-shadow 0.3s;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .tracker-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05);
+    }
+
+    .card-paused {
+        opacity: 0.6;
+        filter: grayscale(0.5);
+    }
+
+    .t-img {
+        height: 200px;
+        background: #f8fafc;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+    }
+
+    .t-img img {
+        max-height: 100%;
+        max-width: 100%;
+        object-fit: contain;
+        mix-blend-mode: multiply;
+    }
+
+    .t-info {
+        padding: 1.5rem;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .t-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .t-domain {
+        font-size: 0.8rem;
+        font-weight: 800;
+        color: #94a3b8;
+        text-transform: uppercase;
+    }
+
+    .t-badge {
+        background: #fef08a;
+        color: #854d0e;
+        padding: 4px 10px;
+        border-radius: 50px;
+        font-size: 0.7rem;
+        font-weight: 900;
+    }
+
+    .t-badge.paused {
+        background: #e2e8f0;
+        color: #475569;
+    }
+
+    .t-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--bh-navy);
+        margin-bottom: 1rem;
+        line-height: 1.4;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .t-prices {
+        display: flex;
+        align-items: baseline;
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .t-curr {
+        font-size: 1.8rem;
+        font-weight: 900;
+        color: var(--bh-navy);
+    }
+
+    .t-prev {
+        font-size: 1rem;
+        color: #94a3b8;
+        text-decoration: line-through;
+        font-weight: 600;
+    }
+
+    .t-drop {
+        color: var(--bh-green);
+        font-weight: 800;
+        font-size: 0.9rem;
+        background: #ecfdf5;
+        padding: 2px 8px;
+        border-radius: 6px;
+    }
+
+    .t-target {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #f8fafc;
+        padding: 0.75rem 1rem;
+        border-radius: 10px;
+        margin-bottom: 1rem;
+        font-weight: 700;
+        color: var(--bh-indigo);
+        font-size: 0.9rem;
+    }
+
+    .edit-btn {
+        background: none;
+        border: none;
+        color: #64748b;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 0.8rem;
+        text-decoration: underline;
+    }
+
+    .t-meta-small {
+        font-size: 0.75rem;
+        color: #94a3b8;
+        font-weight: 600;
+        margin-top: auto;
+    }
+
+    .t-actions {
+        display: flex;
+        border-top: 1px solid #f1f5f9;
+    }
+
+    .t-actions button {
+        flex: 1;
+        padding: 1rem;
+        background: none;
+        border: none;
+        border-right: 1px solid #f1f5f9;
+        font-weight: 700;
+        color: #64748b;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+
+    .t-actions button:last-child {
+        border-right: none;
+        flex: 0.3;
+    }
+
+    .t-actions button:hover {
+        background: #f8fafc;
+        color: var(--bh-indigo);
+    }
+
+    .t-actions .delete-btn:hover {
+        color: #ef4444;
+    }
+
+    .t-history {
+        padding: 1rem;
+        border-top: 1px solid #f1f5f9;
+        background: #f8fafc;
+        height: 150px;
+    }
+</style>
+{% endblock %}

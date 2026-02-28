@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center mt-4">
+    <div class="col-lg-7">
+
+        <h4 class="fw-bold mb-4"><i class="fa-solid fa-user-gear me-2 text-primary"></i>My Profile & Settings</h4>
+
+        <!-- Flash messages already in base.html -->
+
+        <!-- ── Account Info ───────────────────────────────────────── -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header border-0 fw-bold bg-transparent pt-3">
+                <i class="fa-solid fa-id-card me-2 text-primary"></i>Account Information
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('main.update_profile') }}">
+                    <input type="hidden" name="action" value="profile">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Full Name</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fa-solid fa-user text-muted"></i></span>
+                            <input type="text" class="form-control" name="name" value="{{ current_user.name or '' }}"
+                                placeholder="Your name">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Email</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fa-solid fa-envelope text-muted"></i></span>
+                            <input type="email" class="form-control bg-light" value="{{ current_user.email }}" disabled>
+                        </div>
+                        <div class="form-text">Email cannot be changed.</div>
+                    </div>
+                    <button class="btn btn-primary" type="submit"><i class="fa-solid fa-floppy-disk me-1"></i>Save
+                        Changes</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- ── Notification Preferences ──────────────────────────── -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header border-0 fw-bold bg-transparent pt-3">
+                <i class="fa-solid fa-bell me-2 text-warning"></i>Alert Preferences
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('main.update_profile') }}">
+                    <input type="hidden" name="action" value="prefs">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Price Check Interval (hours)</label>
+                        <select class="form-select" name="check_interval">
+                            {% for h in [1, 2, 4, 6, 12, 24] %}
+                            <option value="{{ h }}" {% if current_user.check_interval==h %}selected{% endif %}>Every {{
+                                h }}h</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Minimum Drop % to Alert</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" name="min_drop_pct"
+                                value="{{ current_user.min_drop_alert_pct or 1.0 }}" min="0.5" max="50" step="0.5">
+                            <span class="input-group-text">%</span>
+                        </div>
+                        <div class="form-text">Only alert when price drops by at least this percentage.</div>
+                    </div>
+                    <button class="btn btn-warning text-white fw-semibold" type="submit">
+                        <i class="fa-solid fa-sliders me-1"></i>Update Preferences
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- ── Change Password ────────────────────────────────────── -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header border-0 fw-bold bg-transparent pt-3">
+                <i class="fa-solid fa-lock me-2 text-danger"></i>Change Password
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('main.update_profile') }}">
+                    <input type="hidden" name="action" value="password">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Current Password</label>
+                        <input type="password" class="form-control" name="current_password" required
+                            placeholder="••••••••">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">New Password</label>
+                        <input type="password" class="form-control" name="new_password" required
+                            placeholder="Min. 6 characters" minlength="6">
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold small">Confirm New Password</label>
+                        <input type="password" class="form-control" name="confirm_password" required
+                            placeholder="••••••••">
+                    </div>
+                    <button class="btn btn-danger fw-semibold" type="submit">
+                        <i class="fa-solid fa-key me-1"></i>Change Password
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- ── Danger Zone ───────────────────────────────────────── -->
+        <div class="card border-0 shadow-sm border-danger mb-5" style="border: 1px solid #dc3545 !important;">
+            <div class="card-header border-0 fw-bold bg-transparent pt-3 text-danger">
+                <i class="fa-solid fa-triangle-exclamation me-2"></i>Danger Zone
+            </div>
+            <div class="card-body">
+                <p class="text-muted small mb-3">Deleting your account will remove all tracked products and data
+                    permanently.</p>
+                <form method="POST" action="{{ url_for('main.delete_account') }}"
+                    onsubmit="return confirm('Are you sure? This cannot be undone!')">
+                    <button class="btn btn-outline-danger btn-sm">
+                        <i class="fa-solid fa-trash me-1"></i>Delete My Account
+                    </button>
+                </form>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

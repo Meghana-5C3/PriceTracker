@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="row g-4 mt-2">
+
+    <!-- ── Left: Product Card ─────────────────────────────────────────── -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center p-4">
+                <img src="{{ p.image or 'https://placehold.co/150x150/e9ecef/6c757d?text=No+Img' }}"
+                    class="mb-3 rounded" style="max-width:160px;max-height:160px;object-fit:contain;"
+                    onerror="this.src='https://placehold.co/150x150/e9ecef/6c757d?text=N/A'" alt="{{ p.name }}">
+                <h5 class="fw-bold">{{ p.name }}</h5>
+                <a href="{{ p.url }}" target="_blank" class="btn btn-primary btn-sm mb-3 w-100">
+                    <i class="fa-solid fa-arrow-up-right-from-square me-1"></i>View on Store
+                </a>
+
+                <!-- Price Summary -->
+                <div class="row g-2 text-center mb-3">
+                    <div class="col-6">
+                        <div class="p-2 rounded bg-light">
+                            <div class="small text-muted">Current</div>
+                            <div class="fw-bold text-primary fs-5">{{ '₹{:,.0f}'.format(p.current_price) if
+                                p.current_price else '—' }}</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-2 rounded bg-light">
+                            <div class="small text-muted">Lowest Ever</div>
+                            <div class="fw-bold text-success fs-5">{{ '₹{:,.0f}'.format(p.lowest) if p.lowest else '—'
+                                }}</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-2 rounded bg-light">
+                            <div class="small text-muted">Highest</div>
+                            <div class="fw-bold text-danger fs-5">{{ '₹{:,.0f}'.format(p.highest) if p.highest else '—'
+                                }}</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-2 rounded bg-light">
+                            <div class="small text-muted">Average</div>
+                            <div class="fw-bold text-warning fs-5">{{ '₹{:,.0f}'.format(p.avg) if p.avg else '—' }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Prediction Badge -->
+                {% if prediction %}
+                <div
+                    class="alert alert-{{ 'success' if prediction.recommendation == 'BUY' else 'warning' }} py-2 text-start small mb-3">
+                    <strong>🤖 AI Says: {{ prediction.recommendation }}</strong><br>
+                    {{ prediction.reason }}
+                    {% if prediction.predicted_price %}
+                    <br><span class="text-muted">Predicted: ₹{{ '%.0f'|format(prediction.predicted_price) }}</span>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                <!-- Target Price Alert -->
+                <div class="card bg-light border-0 p-3 text-start">
+                    <div class="fw-semibold small mb-2"><i class="fa-solid fa-bullseye me-1 text-danger"></i>Set Target
+                        Price Alert</div>
+                    <form method="POST" action="{{ url_for('main.set_target_price', product_id=p.id) }}">
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text">₹</span>
+                            <input type="number" class="form-control" name="target_price" placeholder="e.g. 5000"
+                                min="1" step="1" value="{{ target_price or '' }}">
+                            <button class="btn btn-danger btn-sm" type="submit">Set</button>
+                        </div>
+                        <div class="form-text">You'll get an email when price drops to this.</div>
+                    </form>
+                    {% if target_price %}
+                    <div class="mt-1 small text-success"><i class="fa-solid fa-check me-1"></i>Alert set at ₹{{
+                        '%.0f'|format(target_price) }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="mt-3">
+            <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary btn-sm w-100">
+                <i class="fa-solid fa-arrow-left me-1"></i>Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- ── Right: Full Price Chart + History Table ───────────────────── -->
+    <div class="col-lg-8">
+
+        <!-- Full price chart -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header border-0 fw-bold bg-transparent pt-3">
+                <i class="fa-solid fa-chart-line me-2 text-primary"></i>Price History Chart
+            </div>
+            <div class="card-body">
+                {% if p.history_points|length > 1 %}
+                <canvas id="fullChart" height="120"></canvas>
+                {% else %}
+                <div class="text-center py-5 text-muted">
+                    <i class="fa-solid fa-chart-line fa-3x mb-3 d-block"></i>
+                    Not enough data yet — check back after the next scheduled price check.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- History table -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header border-0 fw-bold bg-transparent pt-3 d-flex justify-content-between">
+                <span><i class="fa-solid fa-table me-2 text-info"></i>All Price Records</span>
+                <span class="badge bg-primary">{{ p.history_points|length }} checks</span>
+            </div>
+            <div class="card-body p-0" style="max-height:350px;overflow-y:auto;">
+                {% if history_rows %}
+                <table class="table table-hover table-sm mb-0 small">
+                    <thead class="table-light sticky-top">
+                        <tr>
+                            <th>Date & Time</th>
+                            <th class="text-end">Price</th>
+                            <th class="text-end">Change</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in history_rows %}
+                        <tr>
+                            <td>{{ row.checked_at.strftime('%d %b %Y, %H:%M') }}</td>
+                            <td class="text-end fw-semibold">₹{{ '%.0f'|format(row.price) }}</td>
+                            <td class="text-end">
+                                {% if loop.index < history_rows|length %} {% set prev=history_rows[loop.index] %} {% if
+                                    row.price < prev.price %} <span class="text-success small"><i
+                                        class="fa-solid fa-arrow-down"></i> ₹{{ '%.0f'|format(prev.price - row.price)
+                                    }}</span>
+                                    {% elif row.price > prev.price %}
+                                    <span class="text-danger small"><i class="fa-solid fa-arrow-up"></i> ₹{{
+                                        '%.0f'|format(row.price - prev.price) }}</span>
+                                    {% else %}
+                                    <span class="text-muted small">—</span>
+                                    {% endif %}
+                                    {% else %}
+                                    <span class="text-muted small">—</span>
+                                    {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="text-center py-4 text-muted small">No price history recorded yet.</div>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+</div>
+
+{% if p.history_points|length > 1 %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const prices = {{ p.history_points | tojson
+    }};
+    const labels = {{ p.history_labels | tojson }};
+    const minP = Math.min(...prices), maxP = Math.max(...prices);
+    const color = '{{ "#22c55e" if p.trend == "down" else ("#ef4444" if p.trend == "up" else "#3b82f6") }}';
+    const bg = '{{ "rgba(34,197,94,0.12)" if p.trend == "down" else ("rgba(239,68,68,0.10)" if p.trend == "up" else "rgba(59,130,246,0.10)") }}';
+
+    new Chart(document.getElementById('fullChart'), {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [{
+                label: 'Price (₹)',
+                data: prices,
+                borderColor: color,
+                backgroundColor: bg,
+                borderWidth: 2.5,
+                fill: true,
+                tension: 0.35,
+                pointRadius: prices.length > 30 ? 0 : 4,
+                pointHoverRadius: 6,
+            }]
+        },
+        options: {
+            responsive: true,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => '₹' + ctx.parsed.y.toLocaleString('en-IN')
+                    }
+                }
+            },
+            scales: {
+                x: { ticks: { maxRotation: 30, font: { size: 10 }, maxTicksLimit: 12 }, grid: { display: false } },
+                y: {
+                    beginAtZero: false,
+                    suggestedMin: minP * 0.97,
+                    suggestedMax: maxP * 1.02,
+                    ticks: { callback: v => '₹' + v.toLocaleString('en-IN'), font: { size: 10 } }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endif %}
+{% endblock %}

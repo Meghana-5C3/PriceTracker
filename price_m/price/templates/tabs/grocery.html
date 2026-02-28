@@ -1,0 +1,316 @@
+{% extends "base.html" %}
+
+{% block title %}Grocery Comparison | BuyHatke{% endblock %}
+
+{% block content %}
+<main class="main-content">
+    <div class="container container-narrow">
+        <div class="tab-hero hero-grocery">
+            <h1>🛒 Grocery Cart Comparison</h1>
+            <p>Compare your entire cart across BigBasket, Blinkit, and Amazon Fresh.</p>
+
+            <div class="address-selector-glass mt-3">
+                <span class="loc-icon">📍</span>
+                <div class="loc-text">
+                    <strong>Delivery to:</strong>
+                    <span>HSR Layout, Bangalore 560102</span>
+                </div>
+                <button class="change-btn" onclick="alert('Change address feature coming soon!')">Change</button>
+            </div>
+        </div>
+
+        <div class="cart-builder">
+            <div class="search-bar">
+                <input type="text" id="grocery-search" placeholder="Search grocery products (e.g. Milk, Bread, Eggs)">
+                <button onclick="addItem()">Add to Cart</button>
+            </div>
+
+            <div class="items-list" id="cart-items">
+                <div class="item">
+                    <span>Nandini Full Cream Milk (1L)</span>
+                    <div class="qty">
+                        <button onclick="updateQty(this, -1)">-</button>
+                        <span class="qty-val">2</span>
+                        <button onclick="updateQty(this, 1)">+</button>
+                    </div>
+                </div>
+                <div class="item">
+                    <span>Brown Bread (400g)</span>
+                    <div class="qty">
+                        <button onclick="updateQty(this, -1)">-</button>
+                        <span class="qty-val">1</span>
+                        <button onclick="updateQty(this, 1)">+</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="comparison-grid">
+            <div class="store-cart best">
+                <div class="store-badge">Cheapest</div>
+                <img src="https://upload.wikimedia.org/wikipedia/commons/2/25/BigBasket_logo.png" alt="BigBasket">
+                <div class="cart-total" id="bb-total">₹152</div>
+                <div class="cart-savings">Save ₹24</div>
+                <button class="checkout-btn" onclick="checkout('BigBasket')">Checkout</button>
+            </div>
+            <div class="store-cart">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/e/e0/Blinkit_logo.png" alt="Blinkit">
+                <div class="cart-total" id="blink-total">₹176</div>
+                <div class="cart-savings">Save ₹0</div>
+                <button class="checkout-btn" onclick="checkout('Blinkit')">Checkout</button>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function addItem() {
+        const input = document.getElementById('grocery-search');
+        if (!input.value) return;
+
+        const list = document.getElementById('cart-items');
+        const newItem = document.createElement('div');
+        newItem.className = 'item';
+        newItem.innerHTML = `
+            <span>${input.value}</span>
+            <div class="qty">
+                <button onclick="updateQty(this, -1)">-</button>
+                <span class="qty-val">1</span>
+                <button onclick="updateQty(this, 1)">+</button>
+            </div>
+        `;
+        list.appendChild(newItem);
+        input.value = '';
+        updateTotals();
+    }
+
+    function updateQty(btn, delta) {
+        const span = btn.parentElement.querySelector('.qty-val');
+        let val = parseInt(span.innerText) + delta;
+        if (val < 1) {
+            btn.closest('.item').remove();
+        } else {
+            span.innerText = val;
+        }
+        updateTotals();
+    }
+
+    function updateTotals() {
+        // Mock logic to change prices based on items
+        const count = document.querySelectorAll('.item').length;
+        document.getElementById('bb-total').innerText = '₹' + (count * 65 + 22);
+        document.getElementById('blink-total').innerText = '₹' + (count * 78 + 20);
+    }
+
+    async function checkout(store) {
+        const response = await fetch('/api/mock-checkout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ store })
+        });
+        if (response.ok) {
+            alert(`Redirecting to ${store} checkout...`);
+            location.reload();
+        }
+    }
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .mt-3 {
+        margin-top: 3rem;
+    }
+
+    .address-selector-glass {
+        background: rgba(255, 255, 255, 0.1);
+        -webkit-backdrop-filter: blur(10px);
+        backdrop-filter: blur(10px);
+        padding: 1rem 2rem;
+        border-radius: 60px;
+        display: inline-flex;
+        align-items: center;
+        gap: 1.5rem;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .loc-text {
+        text-align: left;
+    }
+
+    .loc-text strong {
+        display: block;
+        font-size: 0.9rem;
+        color: white;
+    }
+
+    .loc-text span {
+        font-size: 0.8rem;
+        color: #cbd5e1;
+    }
+
+    .change-btn {
+        background: none;
+        border: none;
+        color: #fde68a;
+        font-weight: 800;
+        cursor: pointer;
+    }
+
+    .cart-builder {
+        background: white;
+        padding: 3rem;
+        border-radius: var(--radius-lg);
+        border: 1px solid #f1f5f9;
+        margin-bottom: 4rem;
+        margin-top: -3rem;
+        position: relative;
+        z-index: 10;
+        box-shadow: var(--shadow-soft);
+    }
+
+    .search-bar {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 3rem;
+    }
+
+    .search-bar input {
+        flex: 1;
+        padding: 1.25rem 2rem;
+        border-radius: 60px;
+        border: 1px solid #e2e8f0;
+        outline: none;
+        font-size: 1rem;
+    }
+
+    .search-bar button {
+        background: var(--bh-indigo);
+        color: white;
+        border: none;
+        padding: 0 2.5rem;
+        border-radius: 60px;
+        font-weight: 800;
+        cursor: pointer;
+    }
+
+    .items-list .item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1.5rem 0;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .items-list .item span {
+        font-weight: 700;
+        color: var(--bh-navy);
+    }
+
+    .qty {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        background: #f8fafc;
+        padding: 0.5rem 1rem;
+        border-radius: 12px;
+    }
+
+    .qty button {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        border: 1px solid #e2e8f0;
+        background: white;
+        cursor: pointer;
+        font-weight: 950;
+        transition: 0.2s;
+    }
+
+    .qty button:hover {
+        background: var(--bh-indigo);
+        color: white;
+        border-color: var(--bh-indigo);
+    }
+
+    .qty-val {
+        font-weight: 900;
+        min-width: 20px;
+        text-align: center;
+    }
+
+    .comparison-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 3rem;
+    }
+
+    .store-cart {
+        background: white;
+        padding: 4rem 2rem;
+        border-radius: var(--radius-lg);
+        border: 1px solid #e2e8f0;
+        text-align: center;
+        position: relative;
+        transition: 0.3s;
+    }
+
+    .store-cart.best {
+        border: 2px solid var(--bh-green);
+        box-shadow: 0 20px 40px rgba(16, 185, 129, 0.1);
+    }
+
+    .store-badge {
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: var(--bh-green);
+        color: white;
+        padding: 6px 20px;
+        border-radius: 50px;
+        font-size: 0.8rem;
+        font-weight: 900;
+    }
+
+    .store-cart img {
+        height: 50px;
+        margin-bottom: 2rem;
+        object-fit: contain;
+    }
+
+    .cart-total {
+        font-size: 3.5rem;
+        font-weight: 950;
+        color: var(--bh-navy);
+        margin-bottom: 0.5rem;
+    }
+
+    .cart-savings {
+        color: var(--bh-green);
+        font-weight: 800;
+        font-size: 1.1rem;
+        margin-bottom: 3rem;
+    }
+
+    .checkout-btn {
+        width: 100%;
+        background: var(--bh-indigo);
+        color: white;
+        border: none;
+        padding: 1.25rem;
+        border-radius: 15px;
+        font-weight: 800;
+        cursor: pointer;
+        transition: 0.3s;
+        font-size: 1.1rem;
+    }
+
+    .checkout-btn:hover {
+        background: var(--bh-indigo-dark);
+        transform: translateY(-3px);
+    }
+</style>
+{% endblock %}

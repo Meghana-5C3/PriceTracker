@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block title %}Spend Analyzer | BuyHatke{% endblock %}
+
+{% block content %}
+<main class="main-content">
+    <div class="container">
+        <div class="header-flex">
+            <div>
+                <h1>Spend Analyzer</h1>
+                <p>Tracking your spending across all major stores.</p>
+            </div>
+            <div class="savings-card">
+                <span class="savings-label">You saved this month</span>
+                <span class="savings-value">₹{{ lens_data.total_saved if lens_data else '0' }}</span>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Monthly Spending</h3>
+                <canvas id="spendingChart"></canvas>
+            </div>
+            <div class="stat-card">
+                <h3>Category-wise</h3>
+                <canvas id="categoryChart"></canvas>
+            </div>
+        </div>
+
+        <div class="transactions-list">
+            <h3>Recently Tracked Spent</h3>
+            {% if products %}
+            {% for p in products[:5] %}
+            <div class="tx-item">
+                <div class="tx-info">
+                    <strong>{{ p.domain }}</strong>
+                    <span>{{ p.category | capitalize }} • {{ p.name[:40] }}..</span>
+                </div>
+                <div class="tx-amount">₹{{ p.current_price|int }}</div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="empty-state">
+                <p>No products tracked yet. Add items to see your spend lens!</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</main>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const catLabels = {{ lens_data.categories | default ([]) | tojson | safe
+    }};
+    const catData = {{ lens_data.category_amounts | default ([]) | tojson | safe }};
+
+    // Mocked chart for monthly distribution based on total spent
+    let total = {{ lens_data.total_spent if lens_data else 0 }};
+    let mData = [total * 0.1, total * 0.4, total * 0.2, total * 0.3, total * 0.1, total];
+
+    const ctxS = document.getElementById('spendingChart').getContext('2d');
+    new Chart(ctxS, {
+        type: 'line',
+        data: {
+            labels: ['Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar'],
+            datasets: [{
+                label: 'Simulated Spending',
+                data: mData,
+                borderColor: '#4f46e5',
+                tension: 0.4
+            }]
+        }
+    });
+
+    const ctxC = document.getElementById('categoryChart').getContext('2d');
+    new Chart(ctxC, {
+        type: 'doughnut',
+        data: {
+            labels: catLabels.length ? catLabels : ['No Data'],
+            datasets: [{
+                data: catData.length ? catData : [100],
+                backgroundColor: ['#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#0ea5e9']
+            }]
+        }
+    });
+    });
+</script>
+
+<style>
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .header-flex {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 3rem;
+    }
+
+    .savings-card {
+        background: linear-gradient(135deg, var(--bh-indigo), var(--bh-indigo-dark));
+        box-shadow: 0 15px 35px rgba(79, 70, 229, 0.3);
+        color: white;
+        padding: 2.5rem;
+        border-radius: 30px;
+        text-align: center;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .savings-label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 0.5rem;
+        opacity: 0.9;
+    }
+
+    .savings-value {
+        font-size: 2.5rem;
+        font-weight: 900;
+        letter-spacing: -1px;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 2rem;
+        margin-bottom: 3rem;
+    }
+
+    .stat-card {
+        background: white;
+        padding: 2rem;
+        border-radius: 20px;
+        border: 1px solid #e2e8f0;
+        height: 350px;
+    }
+
+    .transactions-list {
+        background: white;
+        padding: 2rem;
+        border-radius: 20px;
+        border: 1px solid #e2e8f0;
+    }
+
+    .tx-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 0;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .tx-info strong {
+        display: block;
+        font-size: 1rem;
+    }
+
+    .tx-info span {
+        font-size: 0.8rem;
+        color: #64748b;
+    }
+
+    .tx-amount {
+        font-weight: 800;
+        color: #1e293b;
+    }
+</style>
+{% endblock %}

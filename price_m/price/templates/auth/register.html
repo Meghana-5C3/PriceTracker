@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block title %}Sign Up | BuyHatke{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <h2>Create Account</h2>
+        <p class="auth-subtitle">Join the smartest community of shoppers in India!</p>
+
+        {% if error %}
+        <div class="alert alert-error">{{ error }}</div>
+        {% endif %}
+
+        <form action="/auth/register" method="POST" class="auth-form">
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email" placeholder="name@example.com" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Create Password</label>
+                <input type="password" id="password" name="password" placeholder="••••••••" required>
+            </div>
+            <p class="auth-terms">
+                By signing up, you agree to our Terms of Service and Privacy Policy.
+            </p>
+            <button type="submit" class="auth-submit-btn">Create My Account</button>
+        </form>
+
+        <div class="auth-footer">
+            Already have an account? <a href="/auth/login">Login</a>
+        </div>
+    </div>
+</div>
+
+<style>
+    .auth-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: calc(100vh - 200px);
+        background: #f8fafc;
+        padding: 2rem;
+    }
+
+    .auth-card {
+        background: white;
+        padding: 2.5rem;
+        border-radius: 24px;
+        width: 100%;
+        max-width: 450px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+    }
+
+    .auth-card h2 {
+        font-size: 1.75rem;
+        font-weight: 800;
+        margin-bottom: 0.5rem;
+        color: #1e293b;
+        text-align: center;
+    }
+
+    .auth-subtitle {
+        text-align: center;
+        color: #64748b;
+        font-size: 0.9rem;
+        margin-bottom: 2rem;
+    }
+
+    .alert {
+        padding: 0.75rem 1rem;
+        border-radius: 12px;
+        margin-bottom: 1.5rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .alert-error {
+        background: #fff1f2;
+        color: #be123c;
+        border: 1px solid #f43f5e33;
+    }
+
+    .auth-form .form-group {
+        margin-bottom: 1.25rem;
+    }
+
+    .auth-form label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        color: #475569;
+    }
+
+    .auth-form input {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        font-size: 1rem;
+        outline: none;
+    }
+
+    .auth-form input:focus {
+        border-color: var(--bh-indigo);
+        box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+    }
+
+    .auth-submit-btn {
+        width: 100%;
+        background: var(--bh-indigo);
+        color: white;
+        border: none;
+        padding: 1rem;
+        border-radius: 12px;
+        font-size: 1rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .auth-footer {
+        text-align: center;
+        margin-top: 2rem;
+        font-size: 0.9rem;
+        color: #64748b;
+    }
+
+    .auth-footer a {
+        color: var(--bh-indigo);
+        font-weight: 700;
+        text-decoration: none;
+    }
+</style>
+{% endblock %}

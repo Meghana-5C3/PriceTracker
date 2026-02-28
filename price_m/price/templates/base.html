@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}BuyHatke | Shop Smart{% endblock %}</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+    <header>
+        <a href="/" class="logo">buy<span>hatke</span></a>
+        <nav class="nav-links">
+            <a href="/?tab=all" class="{{ 'active' if active_tab == 'all' }}">Home / Hot Deals</a>
+            <a href="/?tab=price-tracker" class="{{ 'active' if active_tab == 'price-tracker' }}">Price Tracker</a>
+            <a href="/?tab=price-compare" class="{{ 'active' if active_tab == 'price-compare' }}">Price Compare</a>
+            <a href="/?tab=grocery" class="{{ 'active' if active_tab == 'grocery' }}">Grocery</a>
+            <a href="/?tab=spend-lens" class="{{ 'active' if active_tab == 'spend-lens' }}">Spend Lens</a>
+            <a href="/?tab=rewards" class="{{ 'active' if active_tab == 'rewards' }}">Rewards</a>
+        </nav>
+        <div class="header-right">
+            {% if request.session.get('user_id') %}
+            <span class="user-email">Hi, {{ request.session.get('user_email').split('@')[0] }}</span>
+            <a href="/auth/logout" class="header-btn btn-refer">Logout</a>
+            {% else %}
+            <a href="/auth/login" class="login-btn">Login</a>
+            {% endif %}
+        </div>
+    </header>
+
+    {% block content %}{% endblock %}
+
+    <footer>
+        <div class="footer-container">
+            <div class="footer-section">
+                <h3>About BuyHatke</h3>
+                <p>India's smartest shopping assistant.</p>
+            </div>
+            <div class="footer-section">
+                <h3>Quick Links</h3>
+                <ul>
+                    <li><a href="#" onclick="alert('About Us page coming soon!')">About Us</a></li>
+                    <li><a href="#" onclick="alert('Contact page coming soon!')">Contact</a></li>
+                    <li><a href="#" onclick="alert('Privacy Policy coming soon!')">Privacy Policy</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h3>App</h3>
+                <div class="app-btns">
+                    <button class="app-btn" onclick="alert('Play Store app coming soon!')">Play Store</button>
+                    <button class="app-btn" onclick="alert('App Store app coming soon!')">App Store</button>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            &copy; 2026 BuyHatke. All rights reserved.
+        </div>
+    </footer>
+
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>

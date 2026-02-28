@@ -1,0 +1,121 @@
+/* ── Fonts & Base ───────────────────────────────────────────────────────── */
+body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    font-size: 0.9rem;
+}
+
+/* ── Navbar ─────────────────────────────────────────────────────────────── */
+[data-bs-theme="light"] #mainNav {
+    background: #fff;
+}
+
+[data-bs-theme="dark"] #mainNav {
+    background: #1e1e2e;
+}
+
+/* ── Product Cards ──────────────────────────────────────────────────────── */
+.product-card {
+    border-radius: 12px;
+    transition: box-shadow .2s, transform .2s;
+    overflow: hidden;
+}
+
+.product-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 .75rem 1.5rem rgba(0, 0, 0, .12) !important;
+}
+
+.product-title {
+    font-size: .85rem;
+    max-width: 260px;
+    line-height: 1.35;
+    color: inherit;
+}
+
+.product-title:hover {
+    text-decoration: underline !important;
+}
+
+/* ── Severity Ribbons ───────────────────────────────────────────────────── */
+.severity-ribbon {
+    position: absolute;
+    top: 10px;
+    right: -5px;
+    padding: 3px 14px;
+    font-size: .7rem;
+    font-weight: 700;
+    letter-spacing: .5px;
+    border-radius: 3px 0 0 3px;
+    z-index: 5;
+}
+
+.severity-ribbon.hot {
+    background: #ff6b2b;
+    color: #fff;
+}
+
+.severity-ribbon.mega {
+    background: linear-gradient(90deg, #7c3aed, #c026d3);
+    color: #fff;
+}
+
+/* ── Notification Dropdown ──────────────────────────────────────────────── */
+.notif-dropdown {
+    border-radius: 12px;
+}
+
+.notif-item {
+    font-size: .82rem;
+    transition: background .15s;
+    cursor: default;
+}
+
+.notif-item:hover {
+    background: rgba(0, 0, 0, .04);
+}
+
+.notif-unread {
+    background: rgba(13, 110, 253, .06);
+}
+
+/* ── Stats Cards ────────────────────────────────────────────────────────── */
+[data-bs-theme="dark"] .card {
+    background: #252535;
+}
+
+[data-bs-theme="dark"] .card-footer {
+    background: #252535 !important;
+}
+
+/* ── Savings Banner ─────────────────────────────────────────────────────── */
+.savings-banner {
+    border-radius: 12px;
+    border-left: 4px solid #22c55e;
+    animation: slideInDown .4s ease;
+}
+
+/* ── Flash alerts ───────────────────────────────────────────────────────── */
+.alert {
+    border-radius: 10px;
+}
+
+@keyframes slideInDown {
+    from {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* ── Auth forms ─────────────────────────────────────────────────────────── */
+.card {
+    border-radius: 14px;
+}
+
+.form-control:focus {
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, .15);
+}

@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0"><i class="fa-solid fa-users me-2 text-primary"></i>All Users</h4>
+    <a href="{{ url_for('admin.dashboard') }}" class="btn btn-sm btn-outline-secondary"><i
+            class="fa-solid fa-arrow-left me-1"></i>Back</a>
+</div>
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>#</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Products</th>
+                    <th>Joined</th>
+                    <th>Role</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr>
+                    <td>{{ u.id }}</td>
+                    <td>{{ u.name or '—' }}</td>
+                    <td>{{ u.email }}</td>
+                    <td><span class="badge bg-primary">{{ u.tracked_products|length }}</span></td>
+                    <td>{{ u.created_at.strftime('%d %b %Y') }}</td>
+                    <td>
+                        {% if u.is_admin %}<span class="badge bg-danger">Admin</span>
+                        {% else %}<span class="badge bg-secondary">User</span>{% endif %}
+                    </td>
+                    <td class="d-flex gap-1">
+                        <form action="{{ url_for('admin.toggle_admin', user_id=u.id) }}" method="POST">
+                            <button class="btn btn-xs btn-outline-warning py-0 px-2" title="Toggle Admin">
+                                <i class="fa-solid fa-shield-halved"></i>
+                            </button>
+                        </form>
+                        <form action="{{ url_for('admin.delete_user', user_id=u.id) }}" method="POST"
+                            onsubmit="return confirm('Delete {{ u.email }}?')">
+                            <button class="btn btn-xs btn-outline-danger py-0 px-2" title="Delete User">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

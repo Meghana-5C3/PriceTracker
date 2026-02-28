@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0"><i class="fa-solid fa-shield-halved me-2 text-danger"></i>Admin Dashboard</h4>
+    <div class="d-flex gap-2">
+        <form action="{{ url_for('admin.test_email') }}" method="POST">
+            <button class="btn btn-sm btn-outline-info"><i class="fa-solid fa-envelope me-1"></i>Test Email</button>
+        </form>
+        <form action="{{ url_for('admin.run_check') }}" method="POST">
+            <button class="btn btn-sm btn-outline-success"><i class="fa-solid fa-rotate me-1"></i>Run Price
+                Check</button>
+        </form>
+        <a href="{{ url_for('main.index') }}" class="btn btn-sm btn-outline-secondary"><i
+                class="fa-solid fa-arrow-left me-1"></i>Back</a>
+    </div>
+</div>
+
+<!-- Stats Row -->
+<div class="row g-3 mb-4">
+    {% for label, value, color, icon in [
+    ('Total Users', total_users, 'primary', 'fa-users'),
+    ('Products Tracked', total_products, 'success', 'fa-boxes-stacked'),
+    ('Price Checks', total_checks, 'info', 'fa-rotate'),
+    ('Notifications', total_notifs, 'warning', 'fa-bell'),
+    ] %}
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm text-center py-3">
+            <i class="fa-solid {{ icon }} fa-2x text-{{ color }} mb-2"></i>
+            <div class="fs-2 fw-bold text-{{ color }}">{{ value }}</div>
+            <div class="small text-muted">{{ label }}</div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="row g-4">
+    <!-- Recent Users -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header border-0 fw-bold d-flex justify-content-between">
+                <span><i class="fa-solid fa-users me-2 text-primary"></i>Recent Users</span>
+                <a href="{{ url_for('admin.users') }}" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0 small">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Joined</th>
+                            <th>Admin</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for u in users %}
+                        <tr>
+                            <td>{{ u.name or '—' }}</td>
+                            <td class="text-truncate" style="max-width:160px;">{{ u.email }}</td>
+                            <td>{{ u.created_at.strftime('%d %b') }}</td>
+                            <td>
+                                {% if u.is_admin %}
+                                <span class="badge bg-danger">Admin</span>
+                                {% else %}
+                                <span class="badge bg-secondary">User</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Tracked Products -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header border-0 fw-bold d-flex justify-content-between">
+                <span><i class="fa-solid fa-fire me-2 text-danger"></i>Most Tracked Products</span>
+                <a href="{{ url_for('admin.products') }}" class="btn btn-sm btn-outline-danger">View All</a>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0 small">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Product</th>
+                            <th>Price</th>
+                            <th>Trackers</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for product, count in top_products %}
+                        <tr>
+                            <td class="text-truncate" style="max-width:200px;">
+                                <a href="{{ product.url }}" target="_blank" class="text-decoration-none">{{
+                                    product.product_name or 'Unnamed' }}</a>
+                            </td>
+                            <td>{% if product.last_price %}₹{{ "%.0f"|format(product.last_price) }}{% else %}—{% endif
+                                %}</td>
+                            <td><span class="badge bg-primary">{{ count }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scheduler Activity -->
+    {% if recent_checks %}
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header border-0 fw-bold">
+                <i class="fa-solid fa-chart-bar me-2 text-info"></i>Price Checks per Day (Last 7 Days)
+            </div>
+            <div class="card-body">
+                <canvas id="checksChart" height="80"></canvas>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const labels = {{ recent_checks | map(attribute = 'day') | list | tojson
+    }};
+    const data = {{ recent_checks | map(attribute = 'count') | list | tojson }};
+    new Chart(document.getElementById('checksChart'), {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [{
+                label: 'Price Checks',
+                data,
+                backgroundColor: 'rgba(99,102,241,0.7)',
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+        }
+    });
+});
+</script>
+{% endblock %}

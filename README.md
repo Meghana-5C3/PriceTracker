@@ -66,4 +66,52 @@ python price/web_app.py
 
 Open in browser:
 
+
 http://127.0.0.1:8000
+
+🌐 Deployment
+
+This project can be deployed on:
+
+Render
+
+Railway
+
+VPS / Cloud server
+
+Recommended start command for deployment:
+
+python price/web_app.py
+🔐 Environment Variables
+
+Create a .env file for:
+
+EMAIL_USER=your_email
+EMAIL_PASS=your_password
+
+Do NOT upload .env to GitHub.
+
+📌 Future Improvements
+
+Chrome extension integration
+
+Live price chart visualization
+
+Mobile-friendly UI improvements
+
+Multi-user tracking dashboard
+
+AI-based deal prediction
+
+👩‍💻 Author
+
+Chedulla Meghana 
+GitHub: https://github.com/Meghana-5C3
+
+⭐ If you like this project
+
+Give it a star on GitHub and share feedback!
+
+
+---
+>>>>>>> 167602f4781e0c617a02a5ee3a481c054b267c62

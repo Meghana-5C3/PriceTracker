@@ -67,7 +67,7 @@ python price/web_app.py
 Open in browser:
 
 http://127.0.0.1:8000
-8000
+
 🌐 Deployment
 
 This project can be deployed on:
